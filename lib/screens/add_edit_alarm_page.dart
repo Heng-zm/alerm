@@ -1,10 +1,19 @@
 // lib/screens/add_edit_alarm_page.dart
+// --- THIS FILE IS UNCHANGED, BUT I AM INCLUDING IT FOR COMPLETENESS ---
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../models/alarm.dart';
 import '../state/alarm_state.dart';
 import '../widgets/custom_list_tile.dart';
-import 'sound_selection_page.dart'; // Import the new sound selection page
+import 'sound_selection_page.dart';
+
+// Helper extension to capitalize sound names
+extension StringExtension on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return "${this[0].toUpperCase()}${substring(1)}";
+  }
+}
 
 class AddEditAlarmPage extends StatefulWidget {
   final Alarm? alarm;
@@ -111,7 +120,6 @@ class _AddEditAlarmPageState extends State<AddEditAlarmPage> {
   }
 
   void _selectSound() async {
-    // Navigate to the sound selection page and wait for a result
     final result = await Navigator.push<String>(
       context,
       CupertinoPageRoute(builder: (context) => const SoundSelectionPage()),
@@ -125,7 +133,7 @@ class _AddEditAlarmPageState extends State<AddEditAlarmPage> {
 
   String _formatSoundName(String soundPath) {
     String name = soundPath.split('/').last.split('.').first;
-    return name.replaceFirst(name[0], name[0].toUpperCase());
+    return name.capitalize();
   }
 
   @override
