@@ -1,4 +1,6 @@
 // lib/state/alarm_state.dart
+// --- FULLY CORRECTED FILE ---
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,23 +13,30 @@ import '../services/weather_service.dart';
 
 class AlarmState extends ChangeNotifier {
   final NotificationService _notificationService;
-  final AudioService _audioService; // Now holds a reference
-  final WeatherService _weatherService; // Now holds a reference
+  final AudioService _audioService;
+  final WeatherService _weatherService;
   final Uuid _uuid = const Uuid();
 
   List<Alarm> _alarms = [];
   List<Weather> _hourlyForecast = [];
   bool _isWeatherLoading = false;
+  bool _isEditMode = false;
 
   List<Alarm> get alarms => _alarms;
   List<Weather> get hourlyForecast => _hourlyForecast;
   bool get isWeatherLoading => _isWeatherLoading;
+  bool get isEditMode => _isEditMode;
   AudioService get audioService => _audioService;
 
   AlarmState(
       this._notificationService, this._audioService, this._weatherService) {
     loadAlarms();
     fetchWeather();
+  }
+
+  void toggleEditMode() {
+    _isEditMode = !_isEditMode;
+    notifyListeners();
   }
 
   Future<void> fetchWeather() async {
@@ -38,23 +47,35 @@ class AlarmState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addAlarm(
-      DateTime time, String label, List<int> days, String sound) async {
+  Future<void> addAlarm({
+    required DateTime time,
+    required String label,
+    required List<int> days,
+    required String sound,
+    String? id,
+  }) async {
     final newAlarm = Alarm(
-      id: _uuid.v4(),
+      id: id ?? _uuid.v4(),
       label: label,
       time: time,
       isActive: true,
       days: days,
       sound: sound,
     );
+    _alarms.removeWhere((alarm) => alarm.id == newAlarm.id);
     _alarms.add(newAlarm);
     await _notificationService.scheduleAlarm(newAlarm);
     await _saveAndSortAlarms();
   }
 
-  Future<void> updateAlarm(String id, DateTime newTime, String newLabel,
-      List<int> newDays, String newSound) async {
+  // --- FIX: Changed to named parameters for consistency ---
+  Future<void> updateAlarm({
+    required String id,
+    required DateTime newTime,
+    required String newLabel,
+    required List<int> newDays,
+    required String newSound,
+  }) async {
     final index = _alarms.indexWhere((alarm) => alarm.id == id);
     if (index != -1) {
       final oldAlarm = _alarms[index];
@@ -92,7 +113,6 @@ class AlarmState extends ChangeNotifier {
         sound: oldAlarm.sound,
       );
       _alarms[index] = newAlarm;
-
       if (newAlarm.isActive) {
         await _notificationService.scheduleAlarm(newAlarm);
       } else {
@@ -138,7 +158,7 @@ class AlarmState extends ChangeNotifier {
 
   @override
   void dispose() {
-    _audioService.dispose(); // Important to release audio resources
+    _audioService.dispose();
     super.dispose();
   }
 }
